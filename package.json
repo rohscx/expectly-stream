@@ -1,0 +1,20 @@
+{
+  "name": "expectly-stream",
+  "version": "0.0.1",
+  "description": "Expect for streams.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joshuah/expectly-stream.git"
+  },
+  "keywords": [
+    "expect",
+    "streams"
+  ],
+  "author": "Joshua Heiks",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/joshuah/expectly-stream/issues"
+  },
+  "homepage": "https://github.com/joshuah/expectly-stream"
+}
