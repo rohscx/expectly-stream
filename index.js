@@ -31,9 +31,10 @@ ExpectlyStream.prototype.send = function(data, callback, remaining) {
 	
 }
 
-ExpectlyStream.prototype.expect = function(pattern, callback, remaining) {
+ExpectlyStream.prototype.expect = function(pattern, callback, remaining, customTimeout) {
 	var self = this;
 	var timeoutId = null;
+	var timeoutMs = customTimeout || self._defaultTimeout;
 	var output = "" + remaining || '';
 
 	// Todo: Verify pattern is a regex...
@@ -53,7 +54,7 @@ ExpectlyStream.prototype.expect = function(pattern, callback, remaining) {
 	}
 
 	function timeout() {
-		return done("Expect timed out after " + self._defaultTimeout + "ms.", output);
+		return done("Expect timed out after " + timeoutMs + "ms.", output);
 	}
 
 	function done(err, remaining) {
@@ -62,12 +63,12 @@ ExpectlyStream.prototype.expect = function(pattern, callback, remaining) {
 			return callback(err, remaining);
 	}
 
-	timeoutId = setTimeout(timeout, this._defaultTimeout)
+	timeoutId = setTimeout(timeout, timeoutMs);
 	this._readStream.on("data", expectListener);
 	return self;
 }
 
-ExpectlyStream.prototype.respond = function(pattern, data, callback, remaining) {
+ExpectlyStream.prototype.respond = function(pattern, data, callback, remaining, customTimeout) {
 	var self = this;
 	function sendDone(err, remaining) {
 		return callback(err, remaining);
@@ -80,13 +81,14 @@ ExpectlyStream.prototype.respond = function(pattern, data, callback, remaining) 
 			self.send(data, sendDone, remaining);
 		}
 	}
-	self.expect(pattern, expectDone, remaining);
+	self.expect(pattern, expectDone, remaining, customTimeout);
 }
 
 
-ExpectlyStream.prototype.match = function(pattern, callback, remaining) {
+ExpectlyStream.prototype.match = function(pattern, callback, remaining, customTimeout) {
 	var self = this;
 	var timeoutId = null;
+	var timeoutMs = customTimeout || self._defaultTimeout;
 	var output = "" + remaining || '';
 
 	// Todo: Verify pattern is a regex...
@@ -107,7 +109,7 @@ ExpectlyStream.prototype.match = function(pattern, callback, remaining) {
 	}
 
 	function timeout() {
-		return done("Match timed out after " + self._defaultTimeout, output);
+		return done("Match timed out after " + timeoutMs, output);
 	}
 
 	function done(err, results, remaining) {
@@ -116,15 +118,16 @@ ExpectlyStream.prototype.match = function(pattern, callback, remaining) {
 			return callback(err, results, remaining);
 	}
 
-	timeoutId = setTimeout(timeout, this._defaultTimeout)
+	timeoutId = setTimeout(timeout, timeoutMs)
 	this._readStream.on("data", expectListener);
 	return self;
 }
 
 
-ExpectlyStream.prototype.between = function(startPattern, endPattern, callback, remaining) {
+ExpectlyStream.prototype.between = function(startPattern, endPattern, callback, remaining, customTimeout) {
 	var self = this;
 	var timeoutId = null;
+	var timeoutMs = customTimeout || self._defaultTimeout;
 	var output = "" + remaining || '';
 	var startMatched = false;
 
@@ -156,7 +159,7 @@ ExpectlyStream.prototype.between = function(startPattern, endPattern, callback, 
 	}
 
 	function timeout() {
-		return done("Match timed out after " + self._defaultTimeout, output);
+		return done("Match timed out after " + timeoutMs, output);
 	}
 
 	function done(err, results, remaining) {
@@ -165,7 +168,7 @@ ExpectlyStream.prototype.between = function(startPattern, endPattern, callback, 
 			return callback(err, results, remaining);
 	}
 
-	timeoutId = setTimeout(timeout, this._defaultTimeout)
+	timeoutId = setTimeout(timeout, timeoutMs)
 	this._readStream.on("data", expectListener);
 	return self;
 }
@@ -191,28 +194,23 @@ ExpectlyStream.prototype.sync = function Sync(remaining) {
 		return syncSession;
 	}
 
-	function Expect(pattern) {
-		_stack.push(["expect", pattern]);
+	function Expect(pattern, customTimeout) {
+		_stack.push(["expect", pattern, customTimeout]);
 		return syncSession;	
 	}
 
-	function Respond(pattern, data) {
-		_stack.push(["respond", pattern, data]);
+	function Respond(pattern, data, customTimeout) {
+		_stack.push(["respond", pattern, data, customTimeout]);
 		return syncSession;	
 	}
 
-	function Match(pattern, callback) {
-		_stack.push(["match", pattern, callback]);
+	function Match(pattern, callback, customTimeout) {
+		_stack.push(["match", pattern, callback, customTimeout]);
 		return syncSession;		
 	}
 
-	function Match(pattern, callback) {
-		_stack.push(["match", pattern, callback]);
-		return syncSession;		
-	}
-
-	function Between(startPattern, endPattern, callback) {
-		_stack.push(["between", startPattern, endPattern, callback]);
+	function Between(startPattern, endPattern, callback, customTimeout) {
+		_stack.push(["between", startPattern, endPattern, callback, customTimeout]);
 		return syncSession;		
 	}
 
@@ -233,13 +231,13 @@ ExpectlyStream.prototype.sync = function Sync(remaining) {
 					self.expect(action[1], function(err, remaining) {
 						if(err) return callback(err);
 						Again(remaining);
-					}, remaining);
+					}, remaining, action[2]);
 					break;
 				case "respond":
 					self.respond(action[1], action[2], function(err, remaining){
 						if(err) return callback(err);
 						Again(remaining);
-					}, remaining);
+					}, remaining, action[3]);
 					break;
 				case "match":
 					self.match(action[1], function(err, results, remaining) {
@@ -271,7 +269,7 @@ ExpectlyStream.prototype.sync = function Sync(remaining) {
 				if(_stack.length > 0 || _stackError != null) {
 					ShiftStack(remaining);
 				} else {
-					return callback(_stackError);
+					return callback(_stackError, remaining);
 				}
 			}
 
