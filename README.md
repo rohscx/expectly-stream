@@ -60,6 +60,10 @@ Expectly Methods
 
 * **.between(startPattern, endPattern, callback, *remaining*, *customTimeout*)** - Starts recording data after the first `startPattern` regex match until the start of the `endPattern` regex match. This is useful for matching complex multi line data. The callback function returns `(err, responseString, remaining)`.
 
+* **.get(key)** - Returns the value of a key stored in the Expectly object.
+
+* **.set(key, value)** - Sets a key value that is stored in the Expectly object.
+
 * **.sync()** - Starts a sync flow control chain that executes multiple commands in order. Any remaining data from a method is passed to the next method in the chain. Sync will not start executing util the `.end()` method is added to the chain.
     * **.send(data)** - Sends data out the write stream.
     * **.expect(regex, *customTimeout*)** - Halts the chain until the expect regex matches.

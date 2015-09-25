@@ -15,6 +15,16 @@ function ExpectlyStream(readStream, writeStream, options) {
 
 	self._defaultTimeout = options.timeout || 10000;
 	self._readStream = readStream;
+
+	self._dictionary = {};
+}
+
+ExpectlyStream.prototype.set = function Set(key, value) {
+	this._dictionary[key] = value;
+}
+
+ExpectlyStream.prototype.get = function Get(key) {
+	return this._dictionary[key];
 }
 
 ExpectlyStream.prototype.send = function(data, callback, remaining) {
